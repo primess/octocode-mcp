@@ -16,6 +16,12 @@ import {
   getGitLabHost,
   isGitLabConfigured,
 } from './gitlabConfig.js';
+import {
+  getBitbucketConfig as resolveBitbucketConfig,
+  getBitbucketToken,
+  getBitbucketHost,
+  isBitbucketConfigured,
+} from './bitbucketConfig.js';
 
 // Re-export GitLab functions for API compatibility
 export {
@@ -25,6 +31,14 @@ export {
   getGitLabTokenSource,
   isGitLabConfigured,
 } from './gitlabConfig.js';
+
+export {
+  getBitbucketConfig,
+  getBitbucketToken,
+  getBitbucketHost,
+  getBitbucketTokenSource,
+  isBitbucketConfigured,
+} from './bitbucketConfig.js';
 
 /** Result of token resolution with source tracking */
 interface TokenResolutionResult {
@@ -147,6 +161,7 @@ export async function initialize(): Promise<void> {
       disablePrompts: resolved.tools.disablePrompts,
       tokenSource: tokenResult.source,
       gitlab: resolveGitLabConfig(),
+      bitbucket: resolveBitbucketConfig(),
     };
   })();
 
@@ -222,10 +237,12 @@ export async function getTokenSource(): Promise<TokenSourceType> {
 
 /**
  * Get the active provider based on environment configuration.
- * Priority: GITLAB_TOKEN set → 'gitlab', otherwise → 'github' (default)
+ * Priority: Bitbucket token set → 'bitbucket', then GitLab, otherwise → 'github' (default)
  */
 export function getActiveProvider(): ProviderType {
-  return isGitLabConfigured() ? 'gitlab' : 'github';
+  if (isBitbucketConfigured()) return 'bitbucket';
+  if (isGitLabConfigured()) return 'gitlab';
+  return 'github';
 }
 
 /**
@@ -238,6 +255,13 @@ export function getActiveProviderConfig(): {
   baseUrl?: string;
   token?: string;
 } {
+  if (isBitbucketConfigured()) {
+    return {
+      provider: 'bitbucket',
+      baseUrl: getBitbucketHost(),
+      token: getBitbucketToken() ?? undefined,
+    };
+  }
   if (isGitLabConfigured()) {
     return {
       provider: 'gitlab',
@@ -260,4 +284,11 @@ export function getActiveProviderConfig(): {
  */
 export function isGitLabActive(): boolean {
   return getActiveProvider() === 'gitlab';
+}
+
+/**
+ * Check if the active provider is Bitbucket.
+ */
+export function isBitbucketActive(): boolean {
+  return getActiveProvider() === 'bitbucket';
 }
