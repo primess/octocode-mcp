@@ -76,8 +76,8 @@ export async function exploreMultipleRepositoryStructures(
 
         const resolvedBranch =
           providerType === 'github'
-            ? query.branch ??
-              (await resolveDefaultBranch(query.owner, query.repo, authInfo))
+            ? (query.branch ??
+              (await resolveDefaultBranch(query.owner, query.repo, authInfo)))
             : query.branch;
 
         // Convert query to provider format

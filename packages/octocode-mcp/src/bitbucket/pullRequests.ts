@@ -9,10 +9,7 @@ import type {
   BitbucketPullRequestActivity,
 } from './types.js';
 import { createBitbucketError } from './errors.js';
-import {
-  bitbucketGetJson,
-  type BitbucketClientConfig,
-} from './client.js';
+import { bitbucketGetJson, type BitbucketClientConfig } from './client.js';
 import { generateCacheKey, withDataCache } from '../utils/http/cache.js';
 
 export interface BitbucketPullRequestQuery {
@@ -68,7 +65,9 @@ export async function searchBitbucketPullRequestsAPI(
     return createBitbucketError(
       'Bitbucket pull request search requires projectKey and repositorySlug',
       400,
-      ['Use owner=PROJECT_KEY and repo=repository-slug when querying Bitbucket Data Center pull requests.']
+      [
+        'Use owner=PROJECT_KEY and repo=repository-slug when querying Bitbucket Data Center pull requests.',
+      ]
     );
   }
 
@@ -87,83 +86,104 @@ export async function searchBitbucketPullRequestsAPI(
     sessionId
   );
 
-  return withDataCache(cacheKey, async () => {
-    const path = params.pullRequestId
-      ? `/rest/api/latest/projects/${encodeURIComponent(params.projectKey)}/repos/${encodeURIComponent(params.repositorySlug)}/pull-requests/${params.pullRequestId}`
-      : `/rest/api/latest/projects/${encodeURIComponent(params.projectKey)}/repos/${encodeURIComponent(params.repositorySlug)}/pull-requests`;
+  return withDataCache(
+    cacheKey,
+    async () => {
+      const path = params.pullRequestId
+        ? `/rest/api/latest/projects/${encodeURIComponent(params.projectKey)}/repos/${encodeURIComponent(params.repositorySlug)}/pull-requests/${params.pullRequestId}`
+        : `/rest/api/latest/projects/${encodeURIComponent(params.projectKey)}/repos/${encodeURIComponent(params.repositorySlug)}/pull-requests`;
 
-    const result = await bitbucketGetJson<
-      BitbucketPagedResponse<BitbucketPullRequest> | BitbucketPullRequest
-    >(
-      path,
-      clientConfig,
-      params.pullRequestId
-        ? undefined
-        : {
-            state: params.state || 'ALL',
-            limit: perPage,
-            start,
-          }
-    );
-
-    if ('error' in result) {
-      return result;
-    }
-
-    const pullRequests = Array.isArray((result.data as BitbucketPagedResponse<BitbucketPullRequest>).values)
-      ? (result.data as BitbucketPagedResponse<BitbucketPullRequest>).values
-      : [result.data as BitbucketPullRequest];
-
-    const filtered = pullRequests.filter(pr => {
-      if (params.author && pr.author?.user?.name !== params.author) return false;
-      if (params.sourceBranch && pr.fromRef?.displayId !== params.sourceBranch) return false;
-      if (params.targetBranch && pr.toRef?.displayId !== params.targetBranch) return false;
-      return true;
-    });
-
-    const decorated = params.withComments
-      ? await Promise.all(
-          filtered.map(async pr => {
-            try {
-              const activities = await getBitbucketPullRequestActivities(
-                params.projectKey,
-                params.repositorySlug,
-                pr.id,
-                clientConfig
-              );
-              return {
-                ...pr,
-                __activities: activities,
-              };
-            } catch {
-              return pr;
+      const result = await bitbucketGetJson<
+        BitbucketPagedResponse<BitbucketPullRequest> | BitbucketPullRequest
+      >(
+        path,
+        clientConfig,
+        params.pullRequestId
+          ? undefined
+          : {
+              state: params.state || 'ALL',
+              limit: perPage,
+              start,
             }
-          })
+      );
+
+      if ('error' in result) {
+        return result;
+      }
+
+      const pullRequests = Array.isArray(
+        (result.data as BitbucketPagedResponse<BitbucketPullRequest>).values
+      )
+        ? (result.data as BitbucketPagedResponse<BitbucketPullRequest>).values
+        : [result.data as BitbucketPullRequest];
+
+      const filtered = pullRequests.filter(pr => {
+        if (params.author && pr.author?.user?.name !== params.author)
+          return false;
+        if (
+          params.sourceBranch &&
+          pr.fromRef?.displayId !== params.sourceBranch
         )
-      : filtered;
+          return false;
+        if (params.targetBranch && pr.toRef?.displayId !== params.targetBranch)
+          return false;
+        return true;
+      });
 
-    const paged = result.data as BitbucketPagedResponse<BitbucketPullRequest>;
-    const size = Array.isArray(paged.values) ? (paged.size ?? decorated.length) : decorated.length;
-    const hasMore = !params.pullRequestId && !paged.isLastPage && paged.nextPageStart !== undefined;
-    const totalMatches = params.pullRequestId
-      ? decorated.length
-      : hasMore
-        ? start + size + 1
-        : start + decorated.length;
+      const decorated = params.withComments
+        ? await Promise.all(
+            filtered.map(async pr => {
+              try {
+                const activities = await getBitbucketPullRequestActivities(
+                  params.projectKey,
+                  params.repositorySlug,
+                  pr.id,
+                  clientConfig
+                );
+                return {
+                  ...pr,
+                  __activities: activities,
+                };
+              } catch {
+                return pr;
+              }
+            })
+          )
+        : filtered;
 
-    return {
-      data: {
-        pullRequests: decorated,
-        pagination: {
-          currentPage: page,
-          totalPages: params.pullRequestId ? 1 : hasMore ? page + 1 : Math.max(page, 1),
-          hasMore: !!hasMore,
-          totalMatches,
+      const paged = result.data as BitbucketPagedResponse<BitbucketPullRequest>;
+      const size = Array.isArray(paged.values)
+        ? (paged.size ?? decorated.length)
+        : decorated.length;
+      const hasMore =
+        !params.pullRequestId &&
+        !paged.isLastPage &&
+        paged.nextPageStart !== undefined;
+      const totalMatches = params.pullRequestId
+        ? decorated.length
+        : hasMore
+          ? start + size + 1
+          : start + decorated.length;
+
+      return {
+        data: {
+          pullRequests: decorated,
+          pagination: {
+            currentPage: page,
+            totalPages: params.pullRequestId
+              ? 1
+              : hasMore
+                ? page + 1
+                : Math.max(page, 1),
+            hasMore: !!hasMore,
+            totalMatches,
+          },
         },
-      },
-      status: result.status,
-    };
-  }, {
-    shouldCache: value => 'data' in value,
-  });
+        status: result.status,
+      };
+    },
+    {
+      shouldCache: value => 'data' in value,
+    }
+  );
 }

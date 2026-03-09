@@ -56,7 +56,9 @@ export function transformCodeSearchResult(
     matches: (item.contentMatches || []).map(match => ({
       context: match.lineContent || match.text || '',
       positions:
-        typeof match.line === 'number' ? ([[match.line, match.line]] as [number, number][]) : [],
+        typeof match.line === 'number'
+          ? ([[match.line, match.line]] as [number, number][])
+          : [],
     })),
     url: getRepositoryUrl(item.repository),
     repository: {
@@ -140,7 +142,9 @@ export async function searchCode(
   query: CodeSearchQuery,
   clientConfig?: BitbucketClientConfig
 ): Promise<ProviderResponse<CodeSearchResult>> {
-  const parsed = query.projectId ? parseBitbucketProjectId(query.projectId) : undefined;
+  const parsed = query.projectId
+    ? parseBitbucketProjectId(query.projectId)
+    : undefined;
 
   const result = await searchBitbucketCodeAPI(
     {

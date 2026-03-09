@@ -180,7 +180,7 @@ export interface ResolvedConfig {
   /** GitLab configuration */
   gitlab: RequiredGitLabConfig;
   /** Bitbucket Data Center configuration */
-  bitbucket: RequiredBitbucketConfig;
+  bitbucket?: RequiredBitbucketConfig;
   /** Local tools configuration */
   local: RequiredLocalConfig;
   /** Tool enable/disable */

@@ -5,10 +5,13 @@
 import type { BitbucketAPIError, BitbucketAPIResponse } from './types.js';
 
 export const BITBUCKET_ERROR_CODES = {
-  RATE_LIMITED: 'Bitbucket API rate limit exceeded. Please wait before retrying.',
+  RATE_LIMITED:
+    'Bitbucket API rate limit exceeded. Please wait before retrying.',
   UNAUTHORIZED: 'Bitbucket authentication failed. Check your BITBUCKET_TOKEN.',
-  FORBIDDEN: 'Access denied. You may not have permission for this Bitbucket resource.',
-  NOT_FOUND: 'Resource not found. Check the project key, repository slug, path, or reference.',
+  FORBIDDEN:
+    'Access denied. You may not have permission for this Bitbucket resource.',
+  NOT_FOUND:
+    'Resource not found. Check the project key, repository slug, path, or reference.',
   BAD_REQUEST: 'Invalid Bitbucket request parameters.',
   SERVER_ERROR: 'Bitbucket server error. Please try again later.',
   NETWORK_ERROR: 'Network error connecting to Bitbucket.',
@@ -95,7 +98,9 @@ function handleHttpLikeError(error: HttpLikeError): BitbucketAPIError {
       error: BITBUCKET_ERROR_CODES.FORBIDDEN,
       status,
       type: 'http',
-      hints: ['Verify your token has permission to access this project or repository.'],
+      hints: [
+        'Verify your token has permission to access this project or repository.',
+      ],
     };
   }
 
@@ -104,7 +109,9 @@ function handleHttpLikeError(error: HttpLikeError): BitbucketAPIError {
       error: BITBUCKET_ERROR_CODES.NOT_FOUND,
       status,
       type: 'http',
-      hints: ['Confirm the project key and repository slug use the Bitbucket Data Center format PROJECT/repo-slug.'],
+      hints: [
+        'Confirm the project key and repository slug use the Bitbucket Data Center format PROJECT/repo-slug.',
+      ],
     };
   }
 

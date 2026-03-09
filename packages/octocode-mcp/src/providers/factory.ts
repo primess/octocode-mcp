@@ -299,9 +299,8 @@ export async function initializeProviders(): Promise<void> {
   }
 
   try {
-    const { BitbucketProvider } = await import(
-      './bitbucket/BitbucketProvider.js'
-    );
+    const { BitbucketProvider } =
+      await import('./bitbucket/BitbucketProvider.js');
     registerProvider('bitbucket', BitbucketProvider);
   } catch {
     // Bitbucket provider is optional - don't fail if not available

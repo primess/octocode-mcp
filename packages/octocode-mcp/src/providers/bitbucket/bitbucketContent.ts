@@ -11,16 +11,14 @@ import { fetchBitbucketFileContentAPI } from '../../bitbucket/fileContent.js';
 import type { BitbucketClientConfig } from '../../bitbucket/client.js';
 import { parseBitbucketProjectId } from './bitbucketSearch.js';
 
-export function transformFileContentResult(
-  data: {
-    filePath: string;
-    content: string;
-    size: number;
-    ref: string;
-    lastCommitSha?: string;
-    lastModified?: string;
-  }
-): FileContentResult {
+export function transformFileContentResult(data: {
+  filePath: string;
+  content: string;
+  size: number;
+  ref: string;
+  lastCommitSha?: string;
+  lastModified?: string;
+}): FileContentResult {
   return {
     path: data.filePath,
     content: data.content,

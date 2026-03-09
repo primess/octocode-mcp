@@ -35,7 +35,8 @@ function resolveBitbucketToken(): BitbucketTokenResolutionResult {
  */
 function resolveBitbucketConfig(): BitbucketConfig {
   const tokenResult = resolveBitbucketToken();
-  const host = getConfigSync().bitbucket.host;
+  const host =
+    process.env.BITBUCKET_HOST?.trim() || getConfigSync().bitbucket?.host;
 
   return {
     host,
@@ -66,7 +67,7 @@ export function getBitbucketToken(): string | null {
  * Priority: env var > config file
  */
 export function getBitbucketHost(): string | undefined {
-  return getConfigSync().bitbucket.host;
+  return process.env.BITBUCKET_HOST?.trim() || getConfigSync().bitbucket?.host;
 }
 
 /**

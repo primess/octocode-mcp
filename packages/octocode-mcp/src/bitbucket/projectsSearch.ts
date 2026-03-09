@@ -7,11 +7,7 @@ import type {
   BitbucketPagedResponse,
   BitbucketRepoRef,
 } from './types.js';
-import { createBitbucketError } from './errors.js';
-import {
-  bitbucketGetJson,
-  type BitbucketClientConfig,
-} from './client.js';
+import { bitbucketGetJson, type BitbucketClientConfig } from './client.js';
 import { generateCacheKey, withDataCache } from '../utils/http/cache.js';
 
 export interface BitbucketProjectsSearchQuery {
@@ -51,60 +47,62 @@ export async function searchBitbucketProjectsAPI(
     sessionId
   );
 
-  return withDataCache(cacheKey, async () => {
-    const path = params.projectKey
-      ? `/rest/api/latest/projects/${encodeURIComponent(params.projectKey)}/repos`
-      : '/rest/api/latest/repos';
+  return withDataCache(
+    cacheKey,
+    async () => {
+      const path = params.projectKey
+        ? `/rest/api/latest/projects/${encodeURIComponent(params.projectKey)}/repos`
+        : '/rest/api/latest/repos';
 
-    const result = await bitbucketGetJson<BitbucketPagedResponse<BitbucketRepoRef>>(
-      path,
-      clientConfig,
-      {
+      const result = await bitbucketGetJson<
+        BitbucketPagedResponse<BitbucketRepoRef>
+      >(path, clientConfig, {
         name: params.search,
         limit: perPage,
         start,
+      });
+
+      if ('error' in result) {
+        return result;
       }
-    );
 
-    if ('error' in result) {
-      return result;
-    }
+      const data = result.data;
+      const values = Array.isArray(data.values) ? data.values : [];
+      const filtered = params.search
+        ? values.filter(repo => {
+            const haystack = [
+              repo.name,
+              repo.slug,
+              repo.description,
+              repo.project?.name,
+              repo.project?.key,
+            ]
+              .filter(Boolean)
+              .join(' ')
+              .toLowerCase();
+            return haystack.includes(params.search!.toLowerCase());
+          })
+        : values;
 
-    const data = result.data;
-    const values = Array.isArray(data.values) ? data.values : [];
-    const filtered = params.search
-      ? values.filter(repo => {
-          const haystack = [
-            repo.name,
-            repo.slug,
-            repo.description,
-            repo.project?.name,
-            repo.project?.key,
-          ]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase();
-          return haystack.includes(params.search!.toLowerCase());
-        })
-      : values;
+      const size = typeof data.size === 'number' ? data.size : filtered.length;
+      const hasMore = !data.isLastPage && data.nextPageStart !== undefined;
+      const totalMatches = hasMore ? start + size + 1 : start + filtered.length;
 
-    const size = typeof data.size === 'number' ? data.size : filtered.length;
-    const hasMore = !data.isLastPage && data.nextPageStart !== undefined;
-    const totalMatches = hasMore ? start + size + 1 : start + filtered.length;
-
-    return {
-      data: {
-        repositories: filtered,
-        pagination: {
-          currentPage: page,
-          totalPages: hasMore ? page + 1 : Math.max(page, 1),
-          hasMore,
-          totalMatches,
+      return {
+        data: {
+          repositories: filtered,
+          pagination: {
+            currentPage: page,
+            totalPages: hasMore ? page + 1 : Math.max(page, 1),
+            hasMore,
+            totalMatches,
+          },
         },
-      },
-      status: result.status,
-    };
-  }, {
-    shouldCache: value => 'data' in value,
-  });
+        status: result.status,
+      };
+    },
+    {
+      shouldCache: value => 'data' in value,
+    }
+  );
 }

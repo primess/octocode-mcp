@@ -2,16 +2,9 @@
  * Bitbucket Data Center repository structure fetching.
  */
 
-import type {
-  BitbucketAPIResponse,
-  BitbucketBrowseChild,
-  BitbucketBrowseResponse,
-} from './types.js';
+import type { BitbucketAPIResponse, BitbucketBrowseResponse } from './types.js';
 import { createBitbucketError } from './errors.js';
-import {
-  bitbucketGetJson,
-  type BitbucketClientConfig,
-} from './client.js';
+import { bitbucketGetJson, type BitbucketClientConfig } from './client.js';
 import { getBitbucketDefaultBranch } from './fileContent.js';
 import { generateCacheKey, withDataCache } from '../utils/http/cache.js';
 import { shouldIgnoreDir, shouldIgnoreFile } from '../utils/file/filters.js';
@@ -69,12 +62,15 @@ function buildStructure(
   basePath: string
 ): Record<string, { files: string[]; folders: string[] }> {
   const structure: Record<string, { files: string[]; folders: string[] }> = {};
-  const normalizedBase = basePath === '/' ? '' : basePath.replace(/^\/+|\/+$/g, '');
+  const normalizedBase =
+    basePath === '/' ? '' : basePath.replace(/^\/+|\/+$/g, '');
 
   for (const item of items) {
     let relativePath = item.path.replace(/^\/+/, '');
     if (normalizedBase && relativePath.startsWith(normalizedBase)) {
-      relativePath = relativePath.slice(normalizedBase.length).replace(/^\/+/, '');
+      relativePath = relativePath
+        .slice(normalizedBase.length)
+        .replace(/^\/+/, '');
     }
 
     const segments = relativePath.split('/').filter(Boolean);
@@ -164,7 +160,10 @@ async function collectItems(
         if (child.type === 'DIRECTORY') {
           if (shouldIgnoreDir(fullPath.split('/').pop() || fullPath)) continue;
           items.push({ path: fullPath, type: 'dir' });
-          if (recursive && relativeDepth(params.path || '/', fullPath) < depthLimit) {
+          if (
+            recursive &&
+            relativeDepth(params.path || '/', fullPath) < depthLimit
+          ) {
             queue.push(fullPath);
           }
         } else {
@@ -173,7 +172,10 @@ async function collectItems(
         }
       }
 
-      hasMore = !!children && !children.isLastPage && children.nextPageStart !== undefined;
+      hasMore =
+        !!children &&
+        !children.isLastPage &&
+        children.nextPageStart !== undefined;
       start = children?.nextPageStart ?? 0;
     }
 
@@ -215,48 +217,54 @@ export async function viewBitbucketRepositoryStructureAPI(
     sessionId
   );
 
-  return withDataCache(cacheKey, async () => {
-    const collected = await collectItems(params, ref, clientConfig);
-    if ('error' in collected) {
-      return collected;
+  return withDataCache(
+    cacheKey,
+    async () => {
+      const collected = await collectItems(params, ref, clientConfig);
+      if ('error' in collected) {
+        return collected;
+      }
+
+      const allItems = collected.data;
+      const entriesPerPage = params.perPage || 20;
+      const currentPage = params.page || 1;
+      const totalEntries = allItems.length;
+      const totalPages = Math.max(1, Math.ceil(totalEntries / entriesPerPage));
+      const startIndex = (currentPage - 1) * entriesPerPage;
+      const pageItems = allItems.slice(startIndex, startIndex + entriesPerPage);
+      const hasMore = currentPage < totalPages;
+      const totalFiles = allItems.filter(item => item.type === 'file').length;
+      const totalFolders = allItems.filter(item => item.type === 'dir').length;
+
+      return {
+        data: {
+          projectPath: `${params.projectKey}/${params.repositorySlug}`,
+          branch: ref,
+          path: params.path || '/',
+          structure: buildStructure(pageItems, params.path || '/'),
+          summary: {
+            totalFiles,
+            totalFolders,
+            truncated: hasMore,
+          },
+          pagination: {
+            currentPage,
+            totalPages,
+            hasMore,
+            entriesPerPage,
+            totalEntries,
+          },
+          hints: hasMore
+            ? [
+                `Page ${currentPage}/${totalPages}. Use entryPageNumber=${currentPage + 1} for more.`,
+              ]
+            : undefined,
+        },
+        status: 200,
+      };
+    },
+    {
+      shouldCache: value => 'data' in value,
     }
-
-    const allItems = collected.data;
-    const entriesPerPage = params.perPage || 20;
-    const currentPage = params.page || 1;
-    const totalEntries = allItems.length;
-    const totalPages = Math.max(1, Math.ceil(totalEntries / entriesPerPage));
-    const startIndex = (currentPage - 1) * entriesPerPage;
-    const pageItems = allItems.slice(startIndex, startIndex + entriesPerPage);
-    const hasMore = currentPage < totalPages;
-    const totalFiles = allItems.filter(item => item.type === 'file').length;
-    const totalFolders = allItems.filter(item => item.type === 'dir').length;
-
-    return {
-      data: {
-        projectPath: `${params.projectKey}/${params.repositorySlug}`,
-        branch: ref,
-        path: params.path || '/',
-        structure: buildStructure(pageItems, params.path || '/'),
-        summary: {
-          totalFiles,
-          totalFolders,
-          truncated: hasMore,
-        },
-        pagination: {
-          currentPage,
-          totalPages,
-          hasMore,
-          entriesPerPage,
-          totalEntries,
-        },
-        hints: hasMore
-          ? [`Page ${currentPage}/${totalPages}. Use entryPageNumber=${currentPage + 1} for more.`]
-          : undefined,
-      },
-      status: 200,
-    };
-  }, {
-    shouldCache: value => 'data' in value,
-  });
+  );
 }

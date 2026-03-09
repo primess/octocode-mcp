@@ -83,7 +83,10 @@ export class BitbucketProvider implements ICodeHostProvider {
     query: RepoStructureQuery
   ): Promise<ProviderResponse<RepoStructureResult>> {
     try {
-      return await bitbucketStructure.getRepoStructure(query, this.clientConfig);
+      return await bitbucketStructure.getRepoStructure(
+        query,
+        this.clientConfig
+      );
     } catch (error) {
       return this.handleError(error);
     }

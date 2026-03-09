@@ -52,6 +52,17 @@ vi.mock('../../src/providers/gitlab/GitLabProvider.js', () => ({
   })),
 }));
 
+vi.mock('../../src/providers/bitbucket/BitbucketProvider.js', () => ({
+  BitbucketProvider: vi.fn().mockImplementation(() => ({
+    type: 'bitbucket' as ProviderType,
+    searchCode: vi.fn(),
+    getFileContent: vi.fn(),
+    searchRepos: vi.fn(),
+    searchPullRequests: vi.fn(),
+    getRepoStructure: vi.fn(),
+  })),
+}));
+
 import {
   getProvider,
   registerProvider,

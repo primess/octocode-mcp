@@ -122,6 +122,18 @@ async function bitbucketFetch(
   }
 }
 
+function isFetchResponse(
+  value: Response | ReturnType<typeof createBitbucketError>
+): value is Response {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    'ok' in value &&
+    'status' in value &&
+    'headers' in value
+  );
+}
+
 function createBitbucketErrorFromUnknown(
   error: unknown
 ): ReturnType<typeof createBitbucketError> {
@@ -139,8 +151,13 @@ export async function bitbucketGetJson<T>(
   config?: BitbucketClientConfig,
   params?: Record<string, string | number | boolean | undefined>
 ): Promise<BitbucketAPIResponse<T>> {
-  const response = await bitbucketFetch(path, config, params, 'application/json');
-  if (!(response instanceof Response)) {
+  const response = await bitbucketFetch(
+    path,
+    config,
+    params,
+    'application/json'
+  );
+  if (!isFetchResponse(response)) {
     return response;
   }
 
@@ -164,7 +181,7 @@ export async function bitbucketGetText(
   | ReturnType<typeof createBitbucketError>
 > {
   const response = await bitbucketFetch(path, config, params, 'text/plain');
-  if (!(response instanceof Response)) {
+  if (!isFetchResponse(response)) {
     return response;
   }
 

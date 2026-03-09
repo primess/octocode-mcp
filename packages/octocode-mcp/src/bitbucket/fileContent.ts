@@ -74,45 +74,52 @@ export async function fetchBitbucketFileContentAPI(
     sessionId
   );
 
-  return withDataCache(cacheKey, async () => {
-    const [textResult, metaResult] = await Promise.all([
-      bitbucketGetText(
-        `/rest/api/latest/projects/${encodeURIComponent(params.projectKey)}/repos/${encodeURIComponent(params.repositorySlug)}/raw/${params.path
-          .split('/')
-          .map(encodeURIComponent)
-          .join('/')}`,
-        clientConfig,
-        { at: workingRef }
-      ),
-      bitbucketGetJson<{ latestCommit?: string; size?: number }>(
-        `/rest/api/latest/projects/${encodeURIComponent(params.projectKey)}/repos/${encodeURIComponent(params.repositorySlug)}/browse/${params.path
-          .split('/')
-          .map(encodeURIComponent)
-          .join('/')}`,
-        clientConfig,
-        { at: workingRef, noContent: true }
-      ),
-    ]);
+  return withDataCache(
+    cacheKey,
+    async () => {
+      const [textResult, metaResult] = await Promise.all([
+        bitbucketGetText(
+          `/rest/api/latest/projects/${encodeURIComponent(params.projectKey)}/repos/${encodeURIComponent(params.repositorySlug)}/raw/${params.path
+            .split('/')
+            .map(encodeURIComponent)
+            .join('/')}`,
+          clientConfig,
+          { at: workingRef }
+        ),
+        bitbucketGetJson<{ latestCommit?: string; size?: number }>(
+          `/rest/api/latest/projects/${encodeURIComponent(params.projectKey)}/repos/${encodeURIComponent(params.repositorySlug)}/browse/${params.path
+            .split('/')
+            .map(encodeURIComponent)
+            .join('/')}`,
+          clientConfig,
+          { at: workingRef, noContent: true }
+        ),
+      ]);
 
-    if ('error' in textResult) {
-      return textResult;
-    }
-    if ('error' in metaResult) {
-      return metaResult;
-    }
+      if ('error' in textResult) {
+        return textResult;
+      }
+      if ('error' in metaResult) {
+        return metaResult;
+      }
 
-    return {
-      data: {
-        filePath: params.path,
-        content: textResult.data.text,
-        size: metaResult.data.size || textResult.data.contentLength || textResult.data.text.length,
-        ref: workingRef,
-        lastCommitSha: metaResult.data.latestCommit,
-        lastModified: textResult.data.lastModified,
-      },
-      status: textResult.status,
-    };
-  }, {
-    shouldCache: value => 'data' in value,
-  });
+      return {
+        data: {
+          filePath: params.path,
+          content: textResult.data.text,
+          size:
+            metaResult.data.size ||
+            textResult.data.contentLength ||
+            textResult.data.text.length,
+          ref: workingRef,
+          lastCommitSha: metaResult.data.latestCommit,
+          lastModified: textResult.data.lastModified,
+        },
+        status: textResult.status,
+      };
+    },
+    {
+      shouldCache: value => 'data' in value,
+    }
+  );
 }

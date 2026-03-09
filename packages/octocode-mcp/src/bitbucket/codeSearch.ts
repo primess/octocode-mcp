@@ -8,10 +8,7 @@ import type {
   BitbucketPagedResponse,
 } from './types.js';
 import { createBitbucketError } from './errors.js';
-import {
-  bitbucketGetJson,
-  type BitbucketClientConfig,
-} from './client.js';
+import { bitbucketGetJson, type BitbucketClientConfig } from './client.js';
 import { generateCacheKey, withDataCache } from '../utils/http/cache.js';
 
 export interface BitbucketCodeSearchQuery {
@@ -58,43 +55,46 @@ export async function searchBitbucketCodeAPI(
     sessionId
   );
 
-  return withDataCache(cacheKey, async () => {
-    const result = await bitbucketGetJson<BitbucketPagedResponse<BitbucketCodeSearchItem>>(
-      '/rest/search/latest/code',
-      clientConfig,
-      {
+  return withDataCache(
+    cacheKey,
+    async () => {
+      const result = await bitbucketGetJson<
+        BitbucketPagedResponse<BitbucketCodeSearchItem>
+      >('/rest/search/latest/code', clientConfig, {
         query: params.search,
         projects: params.projectKey,
         repos: params.repositorySlug,
         path: params.path,
         limit: perPage,
         start,
+      });
+
+      if ('error' in result) {
+        return result;
       }
-    );
 
-    if ('error' in result) {
-      return result;
-    }
+      const data = result.data;
+      const size =
+        typeof data.size === 'number' ? data.size : data.values.length;
+      const hasMore = !data.isLastPage && data.nextPageStart !== undefined;
+      const totalCount = hasMore ? start + size + 1 : start + size;
 
-    const data = result.data;
-    const size = typeof data.size === 'number' ? data.size : data.values.length;
-    const hasMore = !data.isLastPage && data.nextPageStart !== undefined;
-    const totalCount = hasMore ? start + size + 1 : start + size;
-
-    return {
-      data: {
-        items: data.values,
-        totalCount,
-        pagination: {
-          currentPage: page,
-          totalPages: hasMore ? page + 1 : Math.max(page, 1),
-          perPage,
-          hasMore,
+      return {
+        data: {
+          items: data.values,
+          totalCount,
+          pagination: {
+            currentPage: page,
+            totalPages: hasMore ? page + 1 : Math.max(page, 1),
+            perPage,
+            hasMore,
+          },
         },
-      },
-      status: result.status,
-    };
-  }, {
-    shouldCache: value => 'data' in value,
-  });
+        status: result.status,
+      };
+    },
+    {
+      shouldCache: value => 'data' in value,
+    }
+  );
 }

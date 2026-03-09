@@ -48,7 +48,9 @@ function mapActivitiesToComments(activities?: BitbucketPullRequestActivity[]) {
 }
 
 export function transformPullRequestResult(
-  pullRequests: Array<BitbucketPullRequest & { __activities?: BitbucketPullRequestActivity[] }>,
+  pullRequests: Array<
+    BitbucketPullRequest & { __activities?: BitbucketPullRequestActivity[] }
+  >,
   pagination: {
     currentPage: number;
     totalPages: number;
@@ -71,7 +73,10 @@ export function transformPullRequestResult(
     author: pr.author?.user?.name || pr.author?.user?.displayName || '',
     assignees: (pr.participants || [])
       .filter(participant => participant.status === 'APPROVED')
-      .map(participant => participant.user?.name || participant.user?.displayName || ''),
+      .map(
+        participant =>
+          participant.user?.name || participant.user?.displayName || ''
+      ),
     labels: [],
     sourceBranch: pr.fromRef?.displayId || '',
     targetBranch: pr.toRef?.displayId || '',
@@ -82,7 +87,9 @@ export function transformPullRequestResult(
     closedAt: toIsoDate(pr.closedDate),
     mergedAt: pr.state === 'MERGED' ? toIsoDate(pr.updatedDate) : undefined,
     commentsCount: pr.properties?.commentCount,
-    comments: mapActivitiesToComments((pr as { __activities?: BitbucketPullRequestActivity[] }).__activities),
+    comments: mapActivitiesToComments(
+      (pr as { __activities?: BitbucketPullRequestActivity[] }).__activities
+    ),
   }));
 
   return {
@@ -102,7 +109,9 @@ export async function searchPullRequests(
         'Bitbucket pull request search requires owner and repo to identify a project and repository.',
       status: 400,
       provider: 'bitbucket',
-      hints: ['Use owner=PROJECT_KEY and repo=repository-slug when querying Bitbucket Data Center pull requests.'],
+      hints: [
+        'Use owner=PROJECT_KEY and repo=repository-slug when querying Bitbucket Data Center pull requests.',
+      ],
     };
   }
 
@@ -134,9 +143,11 @@ export async function searchPullRequests(
 
   return {
     data: transformPullRequestResult(
-      result.data.pullRequests as Array<BitbucketPullRequest & {
-        __activities?: BitbucketPullRequestActivity[];
-      }>,
+      result.data.pullRequests as Array<
+        BitbucketPullRequest & {
+          __activities?: BitbucketPullRequestActivity[];
+        }
+      >,
       result.data.pagination
     ),
     status: result.status,

@@ -51,6 +51,18 @@ vi.mock('../../src/providers/gitlab/GitLabProvider.js', () => ({
   })),
 }));
 
+vi.mock('../../src/providers/bitbucket/BitbucketProvider.js', () => ({
+  BitbucketProvider: vi.fn().mockImplementation((config?: ProviderConfig) => ({
+    type: 'bitbucket' as ProviderType,
+    config,
+    searchCode: vi.fn(),
+    getFileContent: vi.fn(),
+    searchRepos: vi.fn(),
+    searchPullRequests: vi.fn(),
+    getRepoStructure: vi.fn(),
+  })),
+}));
+
 // Import the module under test after mocks are set up
 import {
   getProvider,
@@ -190,12 +202,15 @@ describe('Provider Factory', () => {
     it('should allow registering multiple provider types', () => {
       const MockGitHubProvider = createMockProviderClass('github');
       const MockGitLabProvider = createMockProviderClass('gitlab');
+      const MockBitbucketProvider = createMockProviderClass('bitbucket');
 
       registerProvider('github', MockGitHubProvider);
       registerProvider('gitlab', MockGitLabProvider);
+      registerProvider('bitbucket', MockBitbucketProvider);
 
       expect(isProviderRegistered('github')).toBe(true);
       expect(isProviderRegistered('gitlab')).toBe(true);
+      expect(isProviderRegistered('bitbucket')).toBe(true);
     });
 
     it('should overwrite existing registration for the same type', () => {
@@ -245,14 +260,17 @@ describe('Provider Factory', () => {
     it('should return all registered provider types', () => {
       const MockGitHubProvider = createMockProviderClass('github');
       const MockGitLabProvider = createMockProviderClass('gitlab');
+      const MockBitbucketProvider = createMockProviderClass('bitbucket');
 
       registerProvider('github', MockGitHubProvider);
       registerProvider('gitlab', MockGitLabProvider);
+      registerProvider('bitbucket', MockBitbucketProvider);
 
       const providers = getRegisteredProviders();
 
       expect(providers).toContain('github');
       expect(providers).toContain('gitlab');
+      expect(providers).toContain('bitbucket');
     });
 
     it('should return a new array each time (not the internal reference)', () => {
@@ -271,8 +289,10 @@ describe('Provider Factory', () => {
     beforeEach(() => {
       const MockGitHubProvider = createMockProviderClass('github');
       const MockGitLabProvider = createMockProviderClass('gitlab');
+      const MockBitbucketProvider = createMockProviderClass('bitbucket');
       registerProvider('github', MockGitHubProvider);
       registerProvider('gitlab', MockGitLabProvider);
+      registerProvider('bitbucket', MockBitbucketProvider);
     });
 
     it('should return a provider instance for registered type', () => {
@@ -294,6 +314,13 @@ describe('Provider Factory', () => {
 
       expect(provider).toBeDefined();
       expect(provider.type).toBe('gitlab');
+    });
+
+    it('should return bitbucket provider when specified', () => {
+      const provider = getProvider('bitbucket');
+
+      expect(provider).toBeDefined();
+      expect(provider.type).toBe('bitbucket');
     });
 
     it('should pass config to provider constructor', () => {
@@ -517,6 +544,12 @@ describe('Provider Factory', () => {
       await initializeProviders();
 
       expect(isProviderRegistered('github')).toBe(true);
+    });
+
+    it('should initialize and register Bitbucket provider', async () => {
+      await initializeProviders();
+
+      expect(isProviderRegistered('bitbucket')).toBe(true);
     });
 
     it('should initialize and register GitLab provider', async () => {
