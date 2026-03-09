@@ -41,6 +41,9 @@ const mockDefaultConfig = {
   gitlab: {
     host: 'https://gitlab.com',
   },
+  bitbucket: {
+    host: 'https://bitbucket.org',
+  },
   local: {
     enabled: false,
     enableClone: false,
@@ -115,6 +118,7 @@ const buildMockConfig = () => {
   const envMaxRetries = mockParseIntEnv(process.env.MAX_RETRIES);
   const envApiUrl = process.env.GITHUB_API_URL?.trim();
   const envGitlabHost = process.env.GITLAB_HOST?.trim();
+  const envBitbucketHost = process.env.BITBUCKET_HOST?.trim();
   const envToolsToRun = mockParseStringArrayEnv(process.env.TOOLS_TO_RUN);
   const envEnableTools = mockParseStringArrayEnv(process.env.ENABLE_TOOLS);
   const envDisableTools = mockParseStringArrayEnv(process.env.DISABLE_TOOLS);
@@ -133,6 +137,9 @@ const buildMockConfig = () => {
     },
     gitlab: {
       host: envGitlabHost || mockDefaultConfig.gitlab.host,
+    },
+    bitbucket: {
+      host: envBitbucketHost || mockDefaultConfig.bitbucket.host,
     },
     local: {
       ...mockDefaultConfig.local,
@@ -167,6 +174,7 @@ vi.mock('octocode-shared', () => ({
   // Global config mock - re-evaluates ENABLE_LOCAL on each call
   getConfigSync: vi.fn(() => buildMockConfig()),
   getConfig: vi.fn(async () => buildMockConfig()),
+  DEFAULT_BITBUCKET_CONFIG: { host: 'https://bitbucket.org' },
   _resetSessionState: vi.fn(() => {
     sessionMockState.sessionId = generateMockUUID();
     sessionMockState.deleted = false;

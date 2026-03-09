@@ -296,6 +296,14 @@ export async function initializeProviders(): Promise<void> {
   } catch {
     // GitLab provider is optional - don't fail if not available
   }
+
+  try {
+    const { BitbucketProvider } =
+      await import('./bitbucket/BitbucketProvider.js');
+    registerProvider('bitbucket', BitbucketProvider);
+  } catch {
+    // Bitbucket provider is optional - don't fail if not available
+  }
 }
 
 // ============================================================================
