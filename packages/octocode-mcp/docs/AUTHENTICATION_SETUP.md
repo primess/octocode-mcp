@@ -1,10 +1,10 @@
 # Authentication Setup
 
-> How to authenticate Octocode MCP with GitHub or GitLab.
+> How to authenticate Octocode MCP with GitHub, GitLab, or Bitbucket Data Center.
 
 ## Overview
 
-Octocode MCP needs a token to access code repositories. You can authenticate with **GitHub** or **GitLab** (one at a time).
+Octocode MCP needs a token to access code repositories. You can authenticate with **GitHub**, **GitLab**, or **Bitbucket Data Center** (one active provider at a time).
 
 ### Token Priority
 
@@ -21,6 +21,10 @@ When multiple tokens are available, Octocode uses the **highest-priority** one:
 For **GitLab**, tokens are checked in this order: `GITLAB_TOKEN` → `GL_TOKEN`.
 
 > Setting any GitLab token automatically switches Octocode to **GitLab mode**.
+
+For **Bitbucket Data Center**, tokens are checked in this order: `BITBUCKET_TOKEN` → `BB_TOKEN`.
+
+> Setting a Bitbucket token **and** `BITBUCKET_HOST` switches Octocode to **Bitbucket Data Center mode**.
 
 ---
 
@@ -122,6 +126,41 @@ If you are using a self-hosted instance, add the host URL variable (`GITLAB_HOST
 export GITLAB_TOKEN="glpat_your_token_here"
 export GITLAB_HOST="https://gitlab.your-company.com"
 ```
+
+---
+
+## Bitbucket Data Center Authentication
+
+To use Bitbucket Data Center / Server, set a personal access token as an environment variable **and** provide your Bitbucket host URL.
+
+### Personal Access Token
+
+1. Create a Bitbucket Data Center personal access token with repository read access.
+2. Set `BITBUCKET_TOKEN` and `BITBUCKET_HOST` in **one** of these places:
+
+**A. Global Environment (Shell)**
+```bash
+export BITBUCKET_TOKEN="bbpat_your_token_here"
+export BITBUCKET_HOST="https://bitbucket.your-company.com"
+```
+
+**B. MCP Client Configuration**
+```json
+{
+  "mcpServers": {
+    "octocode": {
+      "command": "npx",
+      "args": ["octocode-mcp"],
+      "env": {
+        "BITBUCKET_TOKEN": "bbpat_your_token_here",
+        "BITBUCKET_HOST": "https://bitbucket.your-company.com"
+      }
+    }
+  }
+}
+```
+
+**Note:** Octocode only activates Bitbucket Data Center mode when both the token and host are configured.
 
 ---
 

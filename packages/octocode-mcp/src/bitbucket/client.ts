@@ -87,13 +87,12 @@ async function bitbucketFetch(
 
   const url = buildUrl(resolved.host, path, params);
 
-  const f = (globalThis as unknown as { fetch?: typeof fetch }).fetch;
-  if (!f) {
+  if (typeof globalThis.fetch !== 'function') {
     return createBitbucketError('Global fetch is not available.', 500);
   }
 
   try {
-    const response = await f(url, {
+    const response = await globalThis.fetch(url, {
       method: 'GET',
       headers: {
         Accept: accept,
