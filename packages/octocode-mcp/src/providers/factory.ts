@@ -221,6 +221,7 @@ export function getProvider(
  * ```typescript
  * registerProvider('github', GitHubProvider);
  * registerProvider('gitlab', GitLabProvider);
+ * registerProvider('bitbucket', BitbucketProvider);
  * ```
  */
 export function registerProvider(
@@ -295,6 +296,15 @@ export async function initializeProviders(): Promise<void> {
     registerProvider('gitlab', GitLabProvider);
   } catch {
     // GitLab provider is optional - don't fail if not available
+  }
+
+  try {
+    const { BitbucketProvider } = await import(
+      './bitbucket/BitbucketProvider.js'
+    );
+    registerProvider('bitbucket', BitbucketProvider);
+  } catch {
+    // Bitbucket provider is optional - don't fail if not available
   }
 }
 

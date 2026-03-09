@@ -3,7 +3,7 @@
  *
  * This module defines the interfaces for provider-agnostic code hosting operations.
  * Tools use these unified types, and the execution layer routes to the appropriate
- * provider (GitHub, GitLab, etc.) based on the `provider` parameter.
+ * provider (GitHub, GitLab, Bitbucket, etc.) based on the `provider` parameter.
  *
  * @module providers/types
  */
@@ -56,7 +56,7 @@ import type {
  * Supported code hosting providers.
  * Default is 'github' .
  */
-export type ProviderType = 'github' | 'gitlab';
+export type ProviderType = 'github' | 'gitlab' | 'bitbucket';
 
 /**
  * Configuration for provider initialization.

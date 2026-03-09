@@ -9,6 +9,8 @@ import {
   initialize,
   cleanup,
   getGitHubToken,
+  getActiveProvider,
+  getActiveProviderConfig,
   arePromptsEnabled,
   isCloneEnabled,
 } from './serverConfig.js';
@@ -144,14 +146,19 @@ export async function registerAllTools(
 ) {
   const logger = LoggerFactory.getLogger(server, 'tools');
 
-  const token = await getGitHubToken();
+  const activeProvider = getActiveProvider();
+  const activeProviderConfig = getActiveProviderConfig();
+  const token =
+    activeProvider === 'github'
+      ? await getGitHubToken()
+      : activeProviderConfig.token || null;
   if (!token) {
-    await logger.warning('No GitHub token - limited functionality');
+    await logger.warning(`No ${activeProvider} token - limited functionality`);
     process.stderr.write(
-      '⚠️  No GitHub token available - some features may be limited\n'
+      `⚠️  No ${activeProvider} token available - some features may be limited\n`
     );
   } else {
-    await logger.info('GitHub token ready');
+    await logger.info(`${activeProvider} token ready`);
   }
 
   const { successCount } = await registerTools(server);

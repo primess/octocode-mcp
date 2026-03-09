@@ -132,10 +132,10 @@ async function handleDirectoryFetch(
 
   if (getActiveProvider() !== 'github') {
     return handleCatchError(
-      new Error(
-        'Directory fetch (type: "directory") is only available with the GitHub provider. ' +
-          'GitLab does not support directory fetch yet. Use file mode (type: "file") instead.'
-      ),
+        new Error(
+          'Directory fetch (type: "directory") is only available with the GitHub provider. ' +
+            'Use file mode (type: "file") instead for other providers.'
+        ),
       query,
       'Provider not supported',
       TOOL_NAMES.GITHUB_FETCH_CONTENT
