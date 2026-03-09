@@ -104,6 +104,26 @@ describe('Bitbucket provider delegates', () => {
     });
   });
 
+  it('returns Bitbucket code-search scope error when repository scope is missing', async () => {
+    mockSearchBitbucketCodeAPI.mockResolvedValue({
+      error:
+        'Bitbucket Data Center code search currently requires project and repository scope.',
+      status: 400,
+      hints: [
+        'Provide both owner=PROJECT_KEY and repo=repository-slug when using Bitbucket code search.',
+      ],
+      type: 'http',
+    } as any);
+
+    const result = await searchCode({
+      keywords: ['token'],
+    });
+
+    expect(result.status).toBe(400);
+    expect(result.error).toContain('requires project and repository scope');
+    expect(result.hints?.[0]).toContain('owner=PROJECT_KEY');
+  });
+
   it('transforms repository search results', async () => {
     mockSearchBitbucketProjectsAPI.mockResolvedValue({
       data: {

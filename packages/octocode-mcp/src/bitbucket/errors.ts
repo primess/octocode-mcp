@@ -111,6 +111,7 @@ function handleHttpLikeError(error: HttpLikeError): BitbucketAPIError {
       type: 'http',
       hints: [
         'Confirm the project key and repository slug use the Bitbucket Data Center format PROJECT/repo-slug.',
+        'For code search specifically, some Bitbucket Data Center deployments may not expose the search endpoint or may require search indexing to be enabled.',
       ],
     };
   }

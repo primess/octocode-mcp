@@ -40,6 +40,17 @@ export async function searchBitbucketCodeAPI(
     return createBitbucketError('Search query is required', 400);
   }
 
+  if (!params.projectKey || !params.repositorySlug) {
+    return createBitbucketError(
+      'Bitbucket Data Center code search currently requires project and repository scope.',
+      400,
+      [
+        'Provide both owner=PROJECT_KEY and repo=repository-slug when using Bitbucket code search.',
+        'Bitbucket Data Center code search is more limited than GitHub/GitLab and may depend on the instance search service/index being enabled.',
+      ]
+    );
+  }
+
   const perPage = Math.min(params.perPage || 20, 100);
   const page = Math.max(params.page || 1, 1);
   const start = (page - 1) * perPage;
