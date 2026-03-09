@@ -222,6 +222,14 @@ export type GitLabTokenSourceType =
   | 'none';
 
 /**
+ * Bitbucket token source types for tracking where the Bitbucket token came from.
+ */
+export type BitbucketTokenSourceType =
+  | 'env:BITBUCKET_TOKEN'
+  | 'env:BB_TOKEN'
+  | 'none';
+
+/**
  * GitLab configuration for connecting to GitLab instances.
  */
 export interface GitLabConfig {
@@ -232,6 +240,20 @@ export interface GitLabConfig {
   /** Source of the GitLab token */
   tokenSource: GitLabTokenSourceType;
   /** Whether GitLab is configured (has valid token) */
+  isConfigured: boolean;
+}
+
+/**
+ * Bitbucket configuration for connecting to Bitbucket instances.
+ */
+export interface BitbucketConfig {
+  /** Bitbucket host URL (default: https://bitbucket.org) */
+  host: string;
+  /** Bitbucket API token */
+  token: string | null;
+  /** Source of the Bitbucket token */
+  tokenSource: BitbucketTokenSourceType;
+  /** Whether Bitbucket is configured (has valid token) */
   isConfigured: boolean;
 }
 
@@ -253,6 +275,8 @@ export interface ServerConfig {
   tokenSource: TokenSourceType;
   /** GitLab configuration (optional) */
   gitlab?: GitLabConfig;
+  /** Bitbucket configuration (optional) */
+  bitbucket?: BitbucketConfig;
 }
 
 // ============================================================================

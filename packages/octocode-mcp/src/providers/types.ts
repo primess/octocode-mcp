@@ -56,7 +56,7 @@ import type {
  * Supported code hosting providers.
  * Default is 'github' .
  */
-export type ProviderType = 'github' | 'gitlab';
+export type ProviderType = 'github' | 'gitlab' | 'bitbucket';
 
 /**
  * Configuration for provider initialization.
