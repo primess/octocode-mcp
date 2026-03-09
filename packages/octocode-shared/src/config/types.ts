@@ -36,6 +36,14 @@ export interface GitLabConfigOptions {
 }
 
 /**
+ * Bitbucket Data Center-specific configuration
+ */
+export interface BitbucketConfigOptions {
+  /** Bitbucket Data Center host URL (required for on-prem usage) */
+  host?: string;
+}
+
+/**
  * Local filesystem tools configuration
  */
 export interface LocalConfigOptions {
@@ -105,6 +113,8 @@ export interface OctocodeConfig {
   github?: GitHubConfigOptions;
   /** GitLab configuration */
   gitlab?: GitLabConfigOptions;
+  /** Bitbucket Data Center configuration */
+  bitbucket?: BitbucketConfigOptions;
   /** Local tools configuration */
   local?: LocalConfigOptions;
   /** Tool enable/disable */
@@ -126,6 +136,10 @@ export interface RequiredGitHubConfig {
 
 export interface RequiredGitLabConfig {
   host: string;
+}
+
+export interface RequiredBitbucketConfig {
+  host: string | undefined;
 }
 
 export interface RequiredLocalConfig {
@@ -165,6 +179,8 @@ export interface ResolvedConfig {
   github: RequiredGitHubConfig;
   /** GitLab configuration */
   gitlab: RequiredGitLabConfig;
+  /** Bitbucket Data Center configuration */
+  bitbucket?: RequiredBitbucketConfig;
   /** Local tools configuration */
   local: RequiredLocalConfig;
   /** Tool enable/disable */

@@ -28,6 +28,9 @@ describe('config/validator', () => {
         gitlab: {
           host: 'https://gitlab.com',
         },
+        bitbucket: {
+          host: 'https://bitbucket.example.com',
+        },
         local: {
           enabled: true,
           allowedPaths: ['/home/user/projects'],
@@ -326,6 +329,43 @@ describe('config/validator', () => {
         expect(result.valid).toBe(false);
         expect(
           result.errors.some(e => e.includes('gitlab: Must be an object'))
+        ).toBe(true);
+      });
+    });
+
+    describe('bitbucket validation', () => {
+      it('accepts valid host URL', () => {
+        const result = validateConfig({
+          bitbucket: { host: 'https://bitbucket.example.com' },
+        });
+        expect(result.valid).toBe(true);
+      });
+
+      it('rejects invalid host URL', () => {
+        const result = validateConfig({
+          bitbucket: { host: 'not-a-url' },
+        });
+        expect(result.valid).toBe(false);
+        expect(result.errors.some(e => e.includes('bitbucket.host'))).toBe(
+          true
+        );
+      });
+
+      it('rejects non-http/https host URL', () => {
+        const result = validateConfig({
+          bitbucket: { host: 'ftp://bitbucket.example.com' },
+        });
+        expect(result.valid).toBe(false);
+        expect(result.errors.some(e => e.includes('Only http/https'))).toBe(
+          true
+        );
+      });
+
+      it('rejects non-object bitbucket section', () => {
+        const result = validateConfig({ bitbucket: 'invalid' });
+        expect(result.valid).toBe(false);
+        expect(
+          result.errors.some(e => e.includes('bitbucket: Must be an object'))
         ).toBe(true);
       });
     });

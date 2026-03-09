@@ -109,6 +109,9 @@ describe('ServerConfig - Simplified Version', () => {
     delete process.env.MAX_RETRIES;
     delete process.env.OCTOCODE_TOKEN;
     delete process.env.DISABLE_PROMPTS;
+    delete process.env.BITBUCKET_TOKEN;
+    delete process.env.BB_TOKEN;
+    delete process.env.BITBUCKET_HOST;
 
     // Set up injectable mock for token resolution
     setupTokenMocks();
@@ -1274,11 +1277,61 @@ describe('ServerConfig - Simplified Version', () => {
     });
   });
 
+  describe('Bitbucket Configuration Fresh Resolution', () => {
+    let getBitbucketConfig: typeof import('../src/serverConfig.js').getBitbucketConfig;
+
+    beforeEach(async () => {
+      const serverConfig = await import('../src/serverConfig.js');
+      getBitbucketConfig = serverConfig.getBitbucketConfig;
+      delete process.env.BITBUCKET_TOKEN;
+      delete process.env.BB_TOKEN;
+      delete process.env.BITBUCKET_HOST;
+    });
+
+    it('should resolve Bitbucket config fresh each time (no caching)', () => {
+      const config1 = getBitbucketConfig();
+      expect(config1.token).toBeNull();
+      expect(config1.isConfigured).toBe(false);
+
+      process.env.BITBUCKET_TOKEN = 'bb-token-1';
+      process.env.BITBUCKET_HOST = 'https://bitbucket.company.local';
+
+      const config2 = getBitbucketConfig();
+      expect(config2.token).toBe('bb-token-1');
+      expect(config2.host).toBe('https://bitbucket.company.local');
+      expect(config2.isConfigured).toBe(true);
+
+      process.env.BITBUCKET_TOKEN = 'bb-token-2';
+
+      const config3 = getBitbucketConfig();
+      expect(config3.token).toBe('bb-token-2');
+    });
+
+    it('should prioritize BITBUCKET_TOKEN over BB_TOKEN', () => {
+      process.env.BITBUCKET_TOKEN = 'primary-bb-token';
+      process.env.BB_TOKEN = 'fallback-bb-token';
+      process.env.BITBUCKET_HOST = 'https://bitbucket.company.local';
+
+      const config = getBitbucketConfig();
+      expect(config.token).toBe('primary-bb-token');
+      expect(config.isConfigured).toBe(true);
+    });
+
+    it('should require both host and token to be configured', () => {
+      process.env.BITBUCKET_TOKEN = 'bb-token';
+
+      const config = getBitbucketConfig();
+      expect(config.host).toBeUndefined();
+      expect(config.isConfigured).toBe(false);
+    });
+  });
+
   describe('Active Provider Configuration', () => {
     // Import the functions we need to test
     let getActiveProvider: typeof import('../src/serverConfig.js').getActiveProvider;
     let getActiveProviderConfig: typeof import('../src/serverConfig.js').getActiveProviderConfig;
     let isGitLabActive: typeof import('../src/serverConfig.js').isGitLabActive;
+    let isBitbucketActive: typeof import('../src/serverConfig.js').isBitbucketActive;
 
     beforeEach(async () => {
       // Dynamic import to get fresh module state
@@ -1286,6 +1339,7 @@ describe('ServerConfig - Simplified Version', () => {
       getActiveProvider = serverConfig.getActiveProvider;
       getActiveProviderConfig = serverConfig.getActiveProviderConfig;
       isGitLabActive = serverConfig.isGitLabActive;
+      isBitbucketActive = serverConfig.isBitbucketActive;
     });
 
     it('should return github as default provider when no GitLab token', () => {
@@ -1309,6 +1363,21 @@ describe('ServerConfig - Simplified Version', () => {
       expect(getActiveProvider()).toBe('gitlab');
 
       delete process.env.GL_TOKEN;
+    });
+
+    it('should return bitbucket as provider when Bitbucket token and host are set', () => {
+      process.env.BITBUCKET_TOKEN = 'bb-token';
+      process.env.BITBUCKET_HOST = 'https://bitbucket.company.local';
+
+      expect(getActiveProvider()).toBe('bitbucket');
+    });
+
+    it('should prioritize bitbucket over gitlab when both are configured', () => {
+      process.env.BITBUCKET_TOKEN = 'bb-token';
+      process.env.BITBUCKET_HOST = 'https://bitbucket.company.local';
+      process.env.GITLAB_TOKEN = 'gl-token';
+
+      expect(getActiveProvider()).toBe('bitbucket');
     });
 
     it('should return github provider config when no GitLab token', () => {
@@ -1349,6 +1418,17 @@ describe('ServerConfig - Simplified Version', () => {
       delete process.env.GITLAB_TOKEN;
     });
 
+    it('should return bitbucket provider config when Bitbucket is configured', () => {
+      process.env.BITBUCKET_TOKEN = 'bb-token';
+      process.env.BITBUCKET_HOST = 'https://bitbucket.company.local';
+
+      const config = getActiveProviderConfig();
+
+      expect(config.provider).toBe('bitbucket');
+      expect(config.baseUrl).toBe('https://bitbucket.company.local');
+      expect(config.token).toBe('bb-token');
+    });
+
     it('should return gitlab provider config with custom host', () => {
       process.env.GITLAB_TOKEN = 'glpat-test-token';
       process.env.GITLAB_HOST = 'https://gitlab.mycompany.com';
@@ -1376,6 +1456,17 @@ describe('ServerConfig - Simplified Version', () => {
       expect(isGitLabActive()).toBe(true);
 
       delete process.env.GITLAB_TOKEN;
+    });
+
+    it('should return false for isBitbucketActive when Bitbucket is not configured', () => {
+      expect(isBitbucketActive()).toBe(false);
+    });
+
+    it('should return true for isBitbucketActive when Bitbucket token and host are set', () => {
+      process.env.BITBUCKET_TOKEN = 'bb-token';
+      process.env.BITBUCKET_HOST = 'https://bitbucket.company.local';
+
+      expect(isBitbucketActive()).toBe(true);
     });
   });
 });

@@ -161,6 +161,16 @@ describe('Provider Types', () => {
       expect(isProviderSuccess(response)).toBe(true);
     });
 
+    it('should work with bitbucket provider', () => {
+      const response: ProviderResponse<string> = {
+        data: 'test data',
+        status: 200,
+        provider: 'bitbucket',
+      };
+
+      expect(isProviderSuccess(response)).toBe(true);
+    });
+
     it('should return true for response with additional hints', () => {
       const response: ProviderResponse<string> = {
         data: 'test data',

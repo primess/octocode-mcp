@@ -132,6 +132,12 @@ describe('config/resolver', () => {
         expect(config.gitlab.host).toBe('https://gitlab.example.com');
       });
 
+      it('parses BITBUCKET_HOST', () => {
+        process.env.BITBUCKET_HOST = 'https://bitbucket.example.com';
+        const config = resolveConfigSync();
+        expect(config.bitbucket?.host).toBe('https://bitbucket.example.com');
+      });
+
       it('parses ENABLE_LOCAL as boolean', () => {
         process.env.ENABLE_LOCAL = 'true';
         expect(resolveConfigSync().local.enabled).toBe(true);
@@ -415,6 +421,40 @@ describe('config/resolver', () => {
 
         const config = resolveConfigSync();
         expect(config.gitlab.host).toBe(DEFAULT_CONFIG.gitlab.host);
+      });
+    });
+
+    describe('bitbucket.host', () => {
+      it('env overrides file', () => {
+        vi.mocked(existsSync).mockReturnValue(true);
+        vi.mocked(readFileSync).mockReturnValue(
+          JSON.stringify({
+            bitbucket: { host: 'https://file.bitbucket.local' },
+          })
+        );
+        process.env.BITBUCKET_HOST = 'https://env.bitbucket.local';
+
+        const config = resolveConfigSync();
+        expect(config.bitbucket?.host).toBe('https://env.bitbucket.local');
+      });
+
+      it('file overrides default', () => {
+        vi.mocked(existsSync).mockReturnValue(true);
+        vi.mocked(readFileSync).mockReturnValue(
+          JSON.stringify({
+            bitbucket: { host: 'https://file.bitbucket.local' },
+          })
+        );
+
+        const config = resolveConfigSync();
+        expect(config.bitbucket?.host).toBe('https://file.bitbucket.local');
+      });
+
+      it('falls back to undefined when neither env nor file', () => {
+        vi.mocked(existsSync).mockReturnValue(false);
+
+        const config = resolveConfigSync();
+        expect(config.bitbucket?.host).toBeUndefined();
       });
     });
 

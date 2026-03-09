@@ -1,26 +1,30 @@
 # Authentication Setup
 
-> How to authenticate Octocode MCP with GitHub or GitLab.
+> How to authenticate Octocode MCP with GitHub, GitLab, or Bitbucket Data Center.
 
 ## Overview
 
-Octocode MCP needs a token to access code repositories. You can authenticate with **GitHub** or **GitLab** (one at a time).
+Octocode MCP needs a token to access code repositories. You can authenticate with **GitHub**, **GitLab**, or **Bitbucket Data Center** (one active provider at a time).
 
 ### Token Priority
 
 When multiple tokens are available, Octocode uses the **highest-priority** one:
 
-| Priority | Token | Source |
-|----------|-------|--------|
-| 1 (highest) | `OCTOCODE_TOKEN` | Octocode CLI login (stored in keychain) |
-| 2 | `GH_TOKEN` | GitHub CLI (`gh auth login`) |
-| 3 | `GITHUB_TOKEN` | Manual environment variable |
-| Fallback | `~/.octocode/credentials.json` | Cached credentials file |
-| Fallback | `gh auth token` | GitHub CLI token command |
+| Priority    | Token                          | Source                                  |
+| ----------- | ------------------------------ | --------------------------------------- |
+| 1 (highest) | `OCTOCODE_TOKEN`               | Octocode CLI login (stored in keychain) |
+| 2           | `GH_TOKEN`                     | GitHub CLI (`gh auth login`)            |
+| 3           | `GITHUB_TOKEN`                 | Manual environment variable             |
+| Fallback    | `~/.octocode/credentials.json` | Cached credentials file                 |
+| Fallback    | `gh auth token`                | GitHub CLI token command                |
 
 For **GitLab**, tokens are checked in this order: `GITLAB_TOKEN` → `GL_TOKEN`.
 
 > Setting any GitLab token automatically switches Octocode to **GitLab mode**.
+
+For **Bitbucket Data Center**, tokens are checked in this order: `BITBUCKET_TOKEN` → `BB_TOKEN`.
+
+> Setting a Bitbucket token **and** `BITBUCKET_HOST` switches Octocode to **Bitbucket Data Center mode**.
 
 ---
 
@@ -38,6 +42,7 @@ npx octocode-cli
 
 # Select "Login to GitHub" from the menu
 ```
+
 This will open a browser window to authorize Octocode safely. The token is stored securely in your system keychain.
 
 ### Option 2: GitHub CLI (`gh`)
@@ -48,6 +53,7 @@ If you already use the [GitHub CLI](https://cli.github.com/), Octocode will auto
 # If you are already logged in here:
 gh auth login
 ```
+
 **That's it!** Octocode will automatically detect your `gh` credentials.
 
 ### Option 3: Manual Token (Environment Variable)
@@ -59,12 +65,14 @@ You can manually provide a Personal Access Token (PAT). This is great for CI/CD 
 
 **A. Global Environment (Shell)**
 Add to your shell configuration (e.g., `~/.zshrc`):
+
 ```bash
 export GITHUB_TOKEN="ghp_your_token_here"
 ```
 
 **B. MCP Client Configuration (e.g., Cursor/Claude)**
 Add to your MCP settings file (usually `claude_desktop_config.json` or similar):
+
 ```json
 {
   "mcpServers": {
@@ -91,11 +99,13 @@ To use GitLab, set a personal access token as an environment variable.
 2. Set the `GITLAB_TOKEN` variable in **one** of these places:
 
 **A. Global Environment (Shell)**
+
 ```bash
 export GITLAB_TOKEN="glpat_your_token_here"
 ```
 
 **B. MCP Client Configuration**
+
 ```json
 {
   "mcpServers": {
@@ -125,18 +135,65 @@ export GITLAB_HOST="https://gitlab.your-company.com"
 
 ---
 
+## Bitbucket Data Center Authentication
+
+To use Bitbucket Data Center / Server, set a personal access token as an environment variable **and** provide your Bitbucket host URL.
+
+### Personal Access Token
+
+1. Create a Bitbucket Data Center personal access token with repository read access.
+2. Set `BITBUCKET_TOKEN` and `BITBUCKET_HOST` in **one** of these places:
+
+**A. Global Environment (Shell)**
+
+```bash
+export BITBUCKET_TOKEN="bbpat_your_token_here"
+export BITBUCKET_HOST="https://bitbucket.your-company.com"
+```
+
+**B. MCP Client Configuration**
+
+```json
+{
+  "mcpServers": {
+    "octocode": {
+      "command": "npx",
+      "args": ["octocode-mcp"],
+      "env": {
+        "BITBUCKET_TOKEN": "bbpat_your_token_here",
+        "BITBUCKET_HOST": "https://bitbucket.your-company.com"
+      }
+    }
+  }
+}
+```
+
+**Note:** Octocode only activates Bitbucket Data Center mode when both the token and host are configured.
+
+### Current Bitbucket Data Center limitations
+
+- **Code search is supported with caveats** — Octocode currently treats Bitbucket code search as a repository-scoped capability, not a GitHub-style global search experience.
+- **Always provide repository scope** — use both `owner=PROJECT_KEY` and `repo=repository-slug` when searching code on Bitbucket.
+- **Search availability may vary by instance** — Bitbucket Data Center search depends on the server-side search/indexing service, and some deployments may not expose the search endpoint consistently.
+- **Expect weaker search semantics than GitHub/GitLab** — Bitbucket search may be less feature-rich and can behave differently depending on server configuration.
+
+---
+
 ## Troubleshooting
 
 ### "No GitHub token found"
+
 - Run `npx octocode-cli` and select **"Check GitHub Auth Status"**.
 - Ensure you have run `gh auth login` if using the GitHub CLI.
 - Check if your environment variables are set: `echo $GITHUB_TOKEN`.
 
 ### "Token expired"
+
 - Simply run `npx octocode-cli` and select **"Login to GitHub"** again to refresh it.
 - Or run `gh auth refresh` if using the GitHub CLI.
 
 ### Switching Accounts
+
 - Just run `npx octocode-cli` and login with the new account. Octocode picks up the change immediately (no restart needed).
 
 ---

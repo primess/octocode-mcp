@@ -64,7 +64,7 @@ export async function executeCloneRepo(
         handleCatchError(
           new Error(
             'githubCloneRepo is only available with the GitHub provider. ' +
-              'GitLab is not supported yet.'
+              'Other providers are not supported yet.'
           ),
           query,
           'Provider not supported',
